@@ -1,0 +1,168 @@
+import json
+import os
+import datetime
+
+# File to store tasks
+TASKS_FILE = 'tasks.json'
+
+def load_tasks():
+    """Load tasks from the JSON file."""
+    if not os.path.exists(TASKS_FILE):
+        return []
+    with open(TASKS_FILE, 'r') as file:
+        try:
+            tasks = json.load(file)
+            return tasks
+        except json.JSONDecodeError:
+            return []
+
+def save_tasks(tasks):
+    """Save tasks to the JSON file."""
+    with open(TASKS_FILE, 'w') as file:
+        json.dump(tasks, file, indent=4)
+
+def generate_id(tasks):
+    """Generate a unique ID for a new task."""
+    if not tasks:
+        return 1
+    return max(task['id'] for task in tasks) + 1
+
+def add_task(tasks):
+    """Add a new task."""
+    title = input("Enter task title: ").strip()
+    description = input("Enter task description (optional): ").strip()
+    
+    # Get due date
+    due_date_input = input("Enter due date (YYYY-MM-DD) (optional): ").strip()
+    due_date = None
+    if due_date_input:
+        try:
+            due_date = datetime.datetime.strptime(due_date_input, "%Y-%m-%d").date().isoformat()
+        except ValueError:
+            print("Invalid date format. Skipping due date.")
+    
+    # Get priority
+    priority = input("Enter priority (Low, Medium, High) (optional): ").strip().capitalize()
+    if priority not in ['Low', 'Medium', 'High']:
+        priority = 'Medium'  # Default priority
+    
+    task = {
+        'id': generate_id(tasks),
+        'title': title,
+        'description': description,
+        'due_date': due_date,
+        'priority': priority,
+        'completed': False
+    }
+    tasks.append(task)
+    save_tasks(tasks)
+    print("Task added successfully!")
+
+def view_tasks(tasks):
+    """Display all tasks."""
+    if not tasks:
+        print("No tasks to show.")
+        return
+    print("\n=== To-Do List ===")
+    for task in tasks:
+        status = "✅" if task['completed'] else "❌"
+        print(f"ID: {task['id']} | {status} | {task['title']}")
+        if task['description']:
+            print(f"    Description: {task['description']}")
+        if task['due_date']:
+            print(f"    Due Date: {task['due_date']}")
+        print(f"    Priority: {task['priority']}\n")
+
+def update_task(tasks):
+    """Mark a task as completed or update its details."""
+    try:
+        task_id = int(input("Enter the ID of the task to update: "))
+    except ValueError:
+        print("Invalid ID.")
+        return
+    for task in tasks:
+        if task['id'] == task_id:
+            print(f"Selected Task: {task['title']}")
+            print("1. Mark as Completed")
+            print("2. Update Title")
+            print("3. Update Description")
+            print("4. Update Due Date")
+            print("5. Update Priority")
+            choice = input("Select an option (1-5): ").strip()
+            if choice == '1':
+                task['completed'] = True
+                print("Task marked as completed.")
+            elif choice == '2':
+                new_title = input("Enter new title: ").strip()
+                if new_title:
+                    task['title'] = new_title
+                    print("Title updated.")
+            elif choice == '3':
+                new_description = input("Enter new description: ").strip()
+                task['description'] = new_description
+                print("Description updated.")
+            elif choice == '4':
+                new_due_date_input = input("Enter new due date (YYYY-MM-DD): ").strip()
+                if new_due_date_input:
+                    try:
+                        new_due_date = datetime.datetime.strptime(new_due_date_input, "%Y-%m-%d").date().isoformat()
+                        task['due_date'] = new_due_date
+                        print("Due date updated.")
+                    except ValueError:
+                        print("Invalid date format. Due date not updated.")
+            elif choice == '5':
+                new_priority = input("Enter new priority (Low, Medium, High): ").strip().capitalize()
+                if new_priority in ['Low', 'Medium', 'High']:
+                    task['priority'] = new_priority
+                    print("Priority updated.")
+                else:
+                    print("Invalid priority. Priority not updated.")
+            else:
+                print("Invalid choice.")
+            save_tasks(tasks)
+            return
+    print("Task ID not found.")
+
+def delete_task(tasks):
+    """Delete a task."""
+    try:
+        task_id = int(input("Enter the ID of the task to delete: "))
+    except ValueError:
+        print("Invalid ID.")
+        return
+    for task in tasks:
+        if task['id'] == task_id:
+            tasks.remove(task)
+            save_tasks(tasks)
+            print("Task deleted successfully.")
+            return
+    print("Task ID not found.")
+
+def main_menu():
+    """Display the main menu and handle user input."""
+    tasks = load_tasks()
+    while True:
+        print("\n=== To-Do List Application ===")
+        print("1. View Tasks")
+        print("2. Add Task")
+        print("3. Update Task")
+        print("4. Delete Task")
+        print("5. Exit")
+        choice = input("Select an option (1-5): ").strip()
+        
+        if choice == '1':
+            view_tasks(tasks)
+        elif choice == '2':
+            add_task(tasks)
+        elif choice == '3':
+            update_task(tasks)
+        elif choice == '4':
+            delete_task(tasks)
+        elif choice == '5':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please select a valid option.")
+
+if __name__ == "__main__":
+    main_menu()
